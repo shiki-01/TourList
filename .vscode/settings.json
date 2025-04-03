@@ -1,0 +1,12 @@
+{
+  "svelte.enable-ts-plugin": true,
+  "cSpell.words": [
+    "pomodoro",
+    "Tauri",
+    "tourlist"
+  ],
+  "tailwindCSS.codeActions": false,
+  "tailwindCSS.codeLens": false,
+  "tailwindCSS.colorDecorators": false,
+  "tailwindCSS.hovers": false
+}
