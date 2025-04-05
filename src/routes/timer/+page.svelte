@@ -4,6 +4,12 @@
   import Dialog from "$lib/components/Dialog.svelte";
 
   let type: "pomodoro" | "timer" = $state("timer");
+  let stage: HTMLDivElement | null = $state(null);
+
+  let isSliding: boolean = $state(false);
+  let slideStartX: number | null = $state(null);
+  let slideOffset: number = $state(0);
+
   let timerMode: "down" | "up" = $state("down");
 
   let settingDialogOpen: boolean = $state(false);
@@ -25,6 +31,77 @@
   let elapsedMilliSeconds: number = $state(0);
   let animationFrame: number | null = $state(null);
   let startTime: number | null = $state(null);
+
+  const handlePointerStart = (event: PointerEvent) => {
+    slideStartX = event.clientX;
+    slideOffset = 0;
+  };
+
+  const handlePointerMove = (event: PointerEvent) => {
+    if (slideStartX === null) return;
+
+    const currentX = event.clientX;
+    const slideThreshold = window.innerWidth / 4;
+
+    slideOffset = currentX - slideStartX;
+
+    if (stage && Math.abs(slideOffset) > slideThreshold) {
+      stage.style.transform = `translateX(${slideOffset}px)`;
+      console.log(
+        `translateX(${slideOffset}px)`,
+        type,
+        stage.style.transform
+      );
+    }
+
+    if (Math.abs(slideOffset) > slideThreshold) {
+      isSliding = true;
+    }
+  };
+
+  const handlePointerEnd = () => {
+    const slideThreshold = window.innerWidth / 4;
+
+    if (Math.abs(slideOffset) > slideThreshold) {
+      if (slideOffset > 0 && type === "timer") {
+        type = "pomodoro";
+      } else if (slideOffset < 0 && type === "pomodoro") {
+        type = "timer";
+      }
+
+      if (stage) {
+        stage.style.transform =
+          type === "pomodoro" ? "translateX(0)" : "translateX(-100%-80px)";
+        console.log(
+          `translateX(${type === "pomodoro" ? 0 : "-100%-80px"})`,
+          type,
+          stage.style.transform
+        );
+      }
+    }
+
+    slideOffset = 0;
+    slideStartX = null;
+
+    setTimeout(() => {
+      isSliding = false;
+      if (stage) {
+        stage.style.transform =
+          type === "pomodoro" ? "translateX(0)" : "translateX(-100%-80px)";
+        console.log(
+          `translateX(${type === "pomodoro" ? 0 : "-100%-80px"})`,
+          type,
+          stage.style.transform
+        );
+      }
+    }, 50);
+  };
+
+  const handleClick = () => {
+    if (!isSliding) {
+      type = type === "pomodoro" ? "timer" : "pomodoro";
+    }
+  };
 
   const validateInput = (event: Event, value: string, isMin: boolean) => {
     const max = isMin ? 480 : 59;
@@ -151,14 +228,14 @@
 </script>
 
 <div
-  class="w:100% h:100% p:40px rel flex flex:column justify-content:center align-items:center"
+  class="w:100% h:100% p:40px rel flex flex:column justify-content:center align-items:center pointer-events:auto"
+  onpointerdown={handlePointerStart}
+  onpointermove={handlePointerMove}
+  onpointerup={handlePointerEnd}
 >
   <button
     class="w:200px h:52px p:6px r:100px bg:#fff fg:#fff b:2px|primary|solid flex ~color|.2s|ease-in-out cursor:pointer"
-    onclick={() => {
-      type = type === "pomodoro" ? "timer" : "pomodoro";
-      timerStart = false;
-    }}
+    onclick={handleClick}
   >
     <div
       class="rel w:100% h:100% justify-content:center align-items:center flex gap:6px"
@@ -205,10 +282,11 @@
     class="w:100% h:100% rel flex flex:column justify-content:center align-items:center"
   >
     <div
-      class="w:calc(200%+80px) h:100% abs grid grid-cols:2 gap:80px top:0 ~left|.4s|ease-in-out {type ===
-      'pomodoro'
-        ? 'left:0'
-        : 'left:calc(-100%-80px)'}"
+      bind:this={stage}
+      style="transform: translateX(0); transition: {isSliding
+        ? 'none'
+        : 'transform 0.2s ease'};"
+      class="w:calc(200%+80px) h:100% abs grid grid-cols:2 gap:80px top:0 left:0 ~left|.4s|ease-in-out"
     >
       <div class="w:100%">hello!</div>
       <div
